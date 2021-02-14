@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<title>ペイント</title>
+<meta content="width=device-width, user-scalable=yes, maximum-scale=1.0, minimum-scale=1.0" name="viewport">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+
+<script>
+
+//イベントの振り分け
+var EVENT = {};
+
+  EVENT.TOUCH_START = 'touchstart';
+  EVENT.TOUCH_MOVE = 'touchmove';
+  EVENT.TOUCH_END = 'touchend';
+
+var startX=0;
+var startY=0;
+var cnvColor = "255, 0, 0, 1";  // 線の色
+var cnvBold = 5;  // 線の太さ
+
+window.addEventListener('load', function() {
+var canvas = document.getElementById('mycanvas');
+canvas.width = canvas.clientWidth;
+canvas.height = canvas.clientHeight;
+
+// canvasの位置座標を取得
+var clientRect = canvas.getBoundingClientRect();
+var canvas_x = clientRect.left;
+var canvas_y = clientRect.top;
+
+var img_datas_cnt = 0;
+var img_datas_arr = new Array();
+
+    // 色の変更
+    $(".color a").click(function(){
+      cnvColor = $(this).data("color");
+      return false;
+    });
+
+    // 線の太さ変更
+    $(".bold a").click(function(){
+      cnvBold = $(this).data("bold");
+      return false;
+    });
+
+
+// マウスダウンイベントを設定
+window.addEventListener( EVENT.TOUCH_START, function(e) {
+	e = e.touches[0];
+	startX=e.pageX-canvas_x;
+	startY=e.pageY-canvas_y;
+
+} ) ;
+// マウスアップイベントを設定
+window.addEventListener(EVENT.TOUCH_END,function(e){
+	// 配列に保存しておく
+	img_datas_arr[img_datas_cnt] = ctx.getImageData(0,0,canvas.width,canvas.height);
+	img_datas_cnt++;
+} );
+// マウスムーブイベントを設定
+window.addEventListener(EVENT.TOUCH_MOVE,function(e){
+	e = e.touches[0];
+	draw(e.pageX-canvas_x,e.pageY-canvas_y);
+} );
+
+// キャンバスに描く
+function draw(x,y){
+	var target= document.getElementById('mycanvas');
+	var context=target.getContext('2d');
+        context.lineWidth = cnvBold;
+	context.strokeStyle = 'rgba('+cnvColor+')';
+	context.beginPath();
+	context.moveTo(startX,startY);
+	context.lineTo(x,y);
+	context.closePath();
+	context.stroke();
+	startX=x;
+	startY=y;
+}
+});
+</script>
+
+<script>
+
+	function save(){
+		var imgPng=mycanvas.toDataURL('image/png');
+		imgPng=imgPng.replace(/^data:image\/png;base64,/,'');
+		document.getElementById("imgBase64").value=imgPng;
+		get(imgBase64.value);
+	}
+
+	function save2(){
+		var imgPng=mycanvas.toDataURL('image/png');
+		imgPng=imgPng.replace(/^data:image\/png;base64,/,'');
+		document.getElementById("imgBase64").value=imgPng;
+		get2(imgBase64.value);
+	}
+
+function get(Idata){
+
+  xmlhttp = new XMLHttpRequest();
+  xmlhttp.onreadystatechange = returnDataSHow;
+  xmlhttp.open("POST","up.php");
+  xmlhttp.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+  xmlhttp.send("data=" + Idata);
+
+}
+
+function get2(Idata){
+
+  xmlhttp = new XMLHttpRequest();
+  xmlhttp.onreadystatechange = picker;
+  xmlhttp.open("POST","up.php");
+  xmlhttp.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+  xmlhttp.send("data=" + Idata);
+
+}
+
+function returnDataSHow(){
+  if(xmlhttp.readyState == 4){
+        if (!liff.isInClient()) {
+            sendAlertIfNotInClient();
+        } else {
+            liff.sendMessages([{
+                'type': 'image',
+                'originalContentUrl': xmlhttp.responseText,
+                'previewImageUrl': xmlhttp.responseText
+            }]).then(function() {
+                liff.closeWindow();
+            }).catch(function(error) {
+                window.alert('Error sending message!: ' + error);
+            });
+        }
+  }
+}
+
+function picker(){
+  if(xmlhttp.readyState == 4){
+        if (!liff.isInClient()) {
+            sendAlertIfNotInClient();
+        } else {
+            if (liff.isApiAvailable('shareTargetPicker')) {
+                liff.shareTargetPicker([
+                    {
+                'type': 'image',
+                'originalContentUrl': xmlhttp.responseText,
+                'previewImageUrl': xmlhttp.responseText
+                    }
+                ])
+                    .then(
+                        document.getElementById('shareTargetPickerMessage').textContent = "Share target picker was launched."
+                    ).catch(function(res) {
+                        document.getElementById('shareTargetPickerMessage').textContent = "Failed to launch share target picker.";
+                    });
+            }
+        }
+    };
+}
+</script>
+
+<style>
+html,body{
+margin: 0;padding: 0;
+overflow: hidden;
+}
+body{
+position: fixed;
+width: 100%;
+height: 100vh;
+background-color: #fff;
+text-align: center;
+}
+h1{
+font-size: 20px;
+}
+#mycanvas{
+width: 80%;
+height: 70vh;
+border:3px solid #ccc;
+}
+
+/* 色や太さを選択する部分のCSS */
+.toolbar li {width:44px; height:44px; margin:auto;list-style-type: none; border:1px solid #ccc; border-radius:6px; margin:10px; display:block; float:left;}
+#black {background-color:black;}
+#red {background-color:red;}
+#green {background-color:green;}
+#blue {background-color:blue;}
+#small {text-align:center; line-height:44px; font-size:100%;}
+#middle {text-align:center; line-height:44px; font-size:200%;}
+#large {text-align:center; line-height:44px; font-size:400%;}
+
+</style>
+<style>
+  .option{
+    margin-bottom: 30px;
+  }
+  .color > a{
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+  }
+  .black{
+    background-color: #000000;
+  }
+  .red{
+    background-color: #ff0000;
+  }
+  .blue{
+    background-color: #0000ff;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="mycanvas">図形を表示するには、canvasタグをサポートしたブラウザが必要です。</canvas>
+  <div class="option">
+    <div class="color">
+      カラー：
+      <a href="" class="black" data-color="0, 0, 0, 1"></a>
+      <a href="" class="red" data-color="255, 0, 0, 1"></a>
+      <a href="" class="blue" data-color="0, 0, 255, 1"></a>
+    </div>
+    <div class="bold">
+      太さ：
+      <a href="" class="small" data-bold="1">小</a>
+      <a href="" class="middle" data-bold="5">中</a>
+      <a href="" class="large" data-bold="10">大</a>
+    </div>
+  </div>
+</div>
+<div>
+		<input type="button" onClick="save();" value="送信"  id="send"/>
+		<input type="button" onClick="save2();" value="ピッカー"  id="send"/>
+		<input type="hidden" name="imgBase64" id="imgBase64" value="" data-inline="true" />
+</div>
+
+<script type="text/javascript">
+
+myLiffId = "********";
+initializeLiff(myLiffId);
+
+
+function initializeLiff(myLiffId) {
+    liff
+        .init({
+            liffId: myLiffId
+        })
+        .then(() => {
+            // start to use LIFF's api
+            initializeApp();
+        })
+        .catch((err) => {
+            document.getElementById("liffAppContent").classList.add('hidden');
+            document.getElementById("liffInitErrorMessage").classList.remove('hidden');
+        });
+}
+    </script>
+
+</body>
+</html>

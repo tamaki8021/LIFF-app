@@ -1,0 +1,4 @@
+gsutil lifecycle set life.json gs://********.appspot.com/
+
+
+gsutil lifecycle get gs://*********.appspot.com/
